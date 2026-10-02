@@ -1,0 +1,6 @@
+.next
+node_modules
+.yarn
+src/app/(payload)
+src/payload-types.ts
+src/migrations

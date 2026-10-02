@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: miniapps
+      POSTGRES_PASSWORD: miniapps
+      POSTGRES_DB: miniapps
+    ports:
+      - '127.0.0.1:5436:5432'
+    volumes:
+      - postgres:/var/lib/postgresql
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  postgres:
