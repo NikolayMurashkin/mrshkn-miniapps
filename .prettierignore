@@ -4,3 +4,4 @@ node_modules
 src/app/(payload)
 src/payload-types.ts
 src/migrations
+.next-*

@@ -3,7 +3,14 @@ import nextTypescript from 'eslint-config-next/typescript';
 
 const config = [
   {
-    ignores: ['.next/**', 'node_modules/**', 'src/app/(payload)/**', 'src/payload-types.ts', 'src/migrations/**'],
+    ignores: [
+      '.next/**',
+      '.next-*/**',
+      'node_modules/**',
+      'src/app/(payload)/**',
+      'src/payload-types.ts',
+      'src/migrations/**',
+    ],
   },
   ...nextCoreWebVitals,
   ...nextTypescript,

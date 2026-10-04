@@ -9,6 +9,8 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['tests/unit/**/*.test.ts'],
+    include: ['tests/unit/**/*.test.{ts,tsx}'],
+    // SDK Telegram хранит состояние в модуле: инлайн нужен, чтобы vi.resetModules() давал тесту чистый SDK
+    server: { deps: { inline: [/@telegram-apps\//] } },
   },
 });
