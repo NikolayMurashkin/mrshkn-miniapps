@@ -12,6 +12,7 @@ import { Users } from './cms/collections/Users';
 import { Settings } from './cms/globals/Settings';
 import { tickTask } from './jobs/tick-task';
 import { TICK_CRON, TICK_QUEUE } from './lib/consts';
+import { migrations } from './migrations';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,6 +26,7 @@ export default buildConfig({
   db: postgresAdapter({
     pool: { connectionString: process.env.DATABASE_URI },
     migrationDir: path.resolve(dirname, 'migrations'),
+    prodMigrations: process.env.MIGRATE_ON_START === 'true' ? migrations : undefined,
   }),
   globals: [Settings],
   graphQL: { disable: true },

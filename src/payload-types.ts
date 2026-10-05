@@ -173,6 +173,7 @@ export interface Service {
   id: number;
   name: string;
   durationMin: number;
+  priceFrom?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -477,6 +478,7 @@ export interface UsersSelect<T extends boolean = true> {
 export interface ServicesSelect<T extends boolean = true> {
   name?: T;
   durationMin?: T;
+  priceFrom?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -22,3 +22,5 @@ export const TICK_QUEUE = 'default';
 export const TICK_TASK_SLUG = 'tick';
 export const SKIP_BOOKING_HOOKS = 'skipBookingHooks';
 export const REMINDER_MAX_ATTEMPTS = 5;
+/** Mini App не для поиска: страницы, API и админка любого экземпляра закрыты от индексации. */
+export const ROBOTS_TAG = 'noindex, nofollow';
