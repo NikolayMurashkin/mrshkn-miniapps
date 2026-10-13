@@ -1,6 +1,8 @@
 import config from '@payload-config';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { getPayload, type Payload } from 'payload';
-import { vi } from 'vitest';
+import { expect, vi } from 'vitest';
 import { POST as cancelPost } from '@/app/api/miniapp/bookings/[id]/cancel/route';
 import { POST as bookingsPost } from '@/app/api/miniapp/bookings/route';
 import { GET as catalogGet } from '@/app/api/miniapp/catalog/route';
@@ -13,6 +15,9 @@ export const OWNER_CHAT_ID = '777000';
 export const TG_BASE = 'https://tg.test';
 export const MAX_BASE = 'https://max.test';
 export const CRM_URL = 'https://crm.test/hook';
+/** Имена ботов для реферальной ссылки. */
+export const TELEGRAM_BOT_USERNAME = 'coffee_test_bot';
+export const MAX_BOT_USERNAME = 'coffee_test_max_bot';
 
 /** День записи далеко в будущем: Date.now() реальный, часы не подменяются. 10:00 Калининграда = 08:00Z. */
 export const BOOKING_DATE = '2030-03-12';
@@ -62,12 +67,56 @@ export const stubEnv = (crmUrl: string = CRM_URL): void => {
   vi.stubEnv('CRM_WEBHOOK_URL', crmUrl);
   vi.stubEnv('TELEGRAM_API_BASE', TG_BASE);
   vi.stubEnv('MAX_API_BASE', MAX_BASE);
+  vi.stubEnv('TELEGRAM_BOT_USERNAME', TELEGRAM_BOT_USERNAME);
+  vi.stubEnv('MAX_BOT_USERNAME', MAX_BOT_USERNAME);
 };
 
-export const resetData = async ({ local }: TestPayload): Promise<void> => {
-  for (const collection of ['reminders', 'bookings', 'clients', 'masters', 'services', 'users']) {
-    await local.delete({ collection, where: { id: { exists: true } }, overrideAccess: true });
+const KNOWN_COLLECTIONS = ['reminders', 'bookings', 'clients', 'masters', 'services', 'users'];
+const RESET_ROUNDS = 5;
+
+/**
+ * Стирает данные всех коллекций приложения. Коллекции, которых тест не знает по имени (лояльность, заказы, меню,
+ * кассиры), берутся из конфига; служебные `payload-*` не трогаются. Они могут ссылаться друг на друга и на
+ * клиентов, поэтому порядок неизвестен: коллекция, документы которой не удалились, стирается в следующем круге.
+ */
+export const resetData = async ({ payload, local }: TestPayload): Promise<void> => {
+  const extra = payload.config.collections
+    .map(({ slug }) => slug)
+    .filter((slug) => !slug.startsWith('payload-') && !KNOWN_COLLECTIONS.includes(slug));
+  let pending = [...extra, ...KNOWN_COLLECTIONS];
+
+  for (let round = 0; round < RESET_ROUNDS && pending.length > 0; round += 1) {
+    const left: string[] = [];
+
+    for (const collection of pending) {
+      try {
+        await local.delete({ collection, where: { id: { exists: true } }, overrideAccess: true });
+      } catch {
+        // ссылку держит коллекция, которая сотрется позже в этом круге
+      }
+
+      const { totalDocs } = await local.find({ collection, limit: 1, depth: 0, overrideAccess: true });
+
+      if (totalDocs > 0) {
+        left.push(collection);
+      }
+    }
+
+    pending = left;
   }
+
+  if (pending.length > 0) {
+    throw new Error(`не удалось очистить коллекции: ${pending.join(', ')}`);
+  }
+};
+
+/** Новые коллекции появятся вместе с реализацией: без них тест падает на этом assert, а не на Local API. */
+export const requireCollections = ({ payload }: TestPayload, slugs: string[]): void => {
+  const present: string[] = payload.config.collections.map(({ slug }) => slug);
+
+  expect(present, `нет коллекций: ${slugs.filter((slug) => !present.includes(slug)).join(', ')}`).toEqual(
+    expect.arrayContaining(slugs),
+  );
 };
 
 export const createAdmin = (local: LooseLocal): Promise<Doc> =>
@@ -127,10 +176,13 @@ const parseBody = (text: string): unknown => {
   }
 };
 
-/** Мок globalThis.fetch: фиксирует вызовы; ответы CRM настраиваются, остальным 200. */
+const botOk = () => new Response(JSON.stringify({ ok: true, result: {} }), { status: 200 });
+
+/** Мок globalThis.fetch: фиксирует вызовы; ответы CRM и ботов настраиваются, по умолчанию 200. */
 export const mockFetch = () => {
   const calls: FetchCall[] = [];
   let crmHandler: () => Response | Promise<Response> = () => new Response('{}', { status: 200 });
+  let botHandler: () => Response | Promise<Response> = botOk;
 
   const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const request = input instanceof Request ? input : null;
@@ -142,7 +194,7 @@ export const mockFetch = () => {
 
     calls.push({ url, method, headers, body: rawBody ? parseBody(rawBody) : undefined });
 
-    return url === CRM_URL ? crmHandler() : new Response(JSON.stringify({ ok: true, result: {} }), { status: 200 });
+    return url === CRM_URL ? crmHandler() : botHandler();
   });
 
   return {
@@ -156,6 +208,9 @@ export const mockFetch = () => {
     },
     setCrm: (handler: () => Response | Promise<Response>) => {
       crmHandler = handler;
+    },
+    setBot: (handler: () => Response | Promise<Response>) => {
+      botHandler = handler;
     },
   };
 };
@@ -182,19 +237,30 @@ export const waitForQuiet = async (calls: FetchCall[], quietMs = 200, timeoutMs 
 
 export const tokenOf = (platform: Platform): string => (platform === 'telegram' ? TELEGRAM_TOKEN : MAX_TOKEN);
 
-/** Свежая валидная initData платформы для пользователя с данным id. */
-export const initDataFor = (platform: Platform, userId: number, authDate: Date = new Date()): string =>
+/** Свежая валидная initData платформы для пользователя с данным id; extra — доп. подписанные поля (start_param). */
+export const initDataFor = (
+  platform: Platform,
+  userId: number,
+  authDate: Date = new Date(),
+  extra: Record<string, string> = {},
+): string =>
   buildInitData({
     botToken: tokenOf(platform),
     user: { id: userId, first_name: `Клиент${userId}`, username: `client_${userId}` },
     authDate,
+    extra,
   });
+
+/** Имя клиента, которое приходит в initData от initDataFor. */
+export const clientNameOf = (userId: number): string => `Клиент${userId}`;
 
 export type ApiInit = {
   method?: 'GET' | 'POST';
   initData?: string | null;
   platform?: string | null;
   body?: unknown;
+  /** Тело как есть, без JSON.stringify (проверка «тело не JSON»). */
+  rawBody?: string;
 };
 
 export const apiRequest = (path: string, init: ApiInit = {}): Request => {
@@ -208,16 +274,88 @@ export const apiRequest = (path: string, init: ApiInit = {}): Request => {
     headers.set('X-Mini-App-Platform', init.platform);
   }
 
-  if (init.body !== undefined) {
+  if (init.body !== undefined || init.rawBody !== undefined) {
     headers.set('Content-Type', 'application/json');
   }
 
   return new Request(`http://localhost/api/miniapp/${path}`, {
     method: init.method ?? 'GET',
     headers,
-    body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    body: init.rawBody ?? (init.body === undefined ? undefined : JSON.stringify(init.body)),
   });
 };
+
+export type Who = { platform: Platform; userId: number };
+export type HttpMethod = 'GET' | 'POST';
+type RouteHandler = (req: Request, context: { params: Promise<Record<string, string>> }) => Promise<Response>;
+
+const MINIAPP_ROUTES = path.resolve(import.meta.dirname, '../../src/app/api/miniapp');
+
+/**
+ * Обработчик маршрута Mini App по пути вида `staff/coupons/[id]/redeem`. Маршрута еще нет — тест падает
+ * на assert «нет src/…», а не на сборке файла.
+ */
+export const miniappRoute = async (route: string, method: HttpMethod): Promise<RouteHandler> => {
+  const file = path.join(MINIAPP_ROUTES, route, 'route.ts');
+
+  expect(existsSync(file), `нет src/app/api/miniapp/${route}/route.ts`).toBe(true);
+
+  const handlers = (await import(/* @vite-ignore */ file)) as Record<string, unknown>;
+
+  expect(typeof handlers[method], `src/app/api/miniapp/${route}/route.ts: нет ${method}`).toBe('function');
+
+  return handlers[method] as RouteHandler;
+};
+
+export type CallInit = {
+  who?: Who;
+  /** Явные заголовки вместо подписи от who (проверка 401). */
+  auth?: { initData: string | null; platform: string | null };
+  /** Доп. подписанные поля initData, например start_param. */
+  extra?: Record<string, string>;
+  body?: unknown;
+  rawBody?: string;
+  params?: Record<string, string>;
+};
+
+/** Вызов обработчика маршрута Mini App с `new Request(…)`, как это делает Next. */
+export const callMiniApp = async (route: string, method: HttpMethod, init: CallInit = {}): Promise<Response> => {
+  const handler = await miniappRoute(route, method);
+  const params = init.params ?? {};
+  const url = route.replace(/\[(\w+)\]/g, (_, key: string) => encodeURIComponent(params[key] ?? ''));
+  const auth = init.auth ?? {
+    initData: init.who ? initDataFor(init.who.platform, init.who.userId, new Date(), init.extra) : null,
+    platform: init.who?.platform ?? null,
+  };
+
+  return handler(apiRequest(url, { method, ...auth, body: init.body, rawBody: init.rawBody }), {
+    params: Promise.resolve(params),
+  });
+};
+
+/** Кассир через Local API: коллекция `staff`, активен по умолчанию. */
+export const createStaff = (local: LooseLocal, input: Who & { name: string; active?: boolean }): Promise<Doc> =>
+  local.create({
+    collection: 'staff',
+    data: {
+      name: input.name,
+      platform: input.platform,
+      platformUserId: String(input.userId),
+      ...(input.active === undefined ? {} : { active: input.active }),
+    },
+    overrideAccess: true,
+  });
+
+/** Сообщения ботов конкретному получателю: Telegram по chat_id, MAX по user_id. */
+export const messagesTo = (calls: FetchCall[], who: Who): string[] =>
+  calls
+    .filter((call) =>
+      who.platform === 'telegram'
+        ? call.url === `${TG_BASE}/bot${TELEGRAM_TOKEN}/sendMessage` &&
+          String((call.body as { chat_id?: unknown } | undefined)?.chat_id) === String(who.userId)
+        : call.url === `${MAX_BASE}/messages?user_id=${who.userId}`,
+    )
+    .map((call) => String((call.body as { text?: unknown } | undefined)?.text ?? ''));
 
 export const postBooking = (
   catalog: Catalog,

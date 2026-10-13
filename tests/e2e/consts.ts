@@ -19,5 +19,13 @@ export const SERVICE_NAME = 'Мужская стрижка';
 export const MASTER_NAME = 'Игорь Лесной';
 export const MAIN_BUTTON_TEXT = 'Записаться';
 
+/** Предзаказ: кассира засев не знает — спек кладет его в таблицу staff сам; гость — свой ID, не TELEGRAM_USER. */
+export const STAFF_TELEGRAM_USER = { id: 515151, first_name: 'Вера' };
+export const GUEST_TELEGRAM_USER = { id: 616161, first_name: 'Гость', username: 'guest_e2e' };
+/** Позиции из засева меню кофейни: 260 и 190 ₽. */
+export const MENU_CAPPUCCINO = 'Капучино';
+export const MENU_CROISSANT = 'Круассан';
+export const ORDER_BUTTON_TEXT = 'Оформить заказ';
+
 /** Скрипт MAX Bridge: страница грузит его с этого адреса, тест подменяет его своим. */
 export const MAX_BRIDGE_SCRIPT_URL = 'https://st.max.ru/js/max-web-app.js';

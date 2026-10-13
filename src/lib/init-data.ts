@@ -1,7 +1,12 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export type InitDataResult =
-  | { ok: true; user: { id: number; firstName?: string; lastName?: string; username?: string }; authDate: Date }
+  | {
+      ok: true;
+      user: { id: number; firstName?: string; lastName?: string; username?: string };
+      authDate: Date;
+      startParam?: string;
+    }
   | { ok: false; reason: 'malformed' | 'missing-hash' | 'bad-hash' | 'expired' };
 
 const malformed: InitDataResult = { ok: false, reason: 'malformed' };
@@ -68,6 +73,7 @@ export const validateInitData = (
   }
 
   const text = (value: unknown): string | undefined => (typeof value === 'string' ? value : undefined);
+  const startParam = fields.get('start_param');
 
   return {
     ok: true,
@@ -78,5 +84,6 @@ export const validateInitData = (
       username: text(user.username),
     },
     authDate,
+    ...(startParam ? { startParam } : {}),
   };
 };

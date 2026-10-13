@@ -3,6 +3,7 @@ import type { BridgeColors, BridgeTheme, TelegramLaunch } from './types';
 export const MAX_BRIDGE_SCRIPT_URL = 'https://st.max.ru/js/max-web-app.js';
 export const MAIN_BUTTON_ATTRIBUTE = 'data-bridge-main-button';
 export const DARK_SCHEME_QUERY = '(prefers-color-scheme: dark)';
+export const SCAN_QR_TEXT = 'Наведите камеру на QR гостя';
 
 export const EMPTY_LAUNCH: TelegramLaunch = { initData: '', themeParams: {} };
 

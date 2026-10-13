@@ -8,3 +8,13 @@ export const loggedInAccess = {
   update: isLoggedIn,
   delete: isLoggedIn,
 };
+
+const nobody: Access = () => false;
+
+/** Журнал пишет только сервер: в админке его читают, но не правят и не удаляют. */
+export const readOnlyAccess = {
+  read: isLoggedIn,
+  create: nobody,
+  update: nobody,
+  delete: nobody,
+};

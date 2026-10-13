@@ -9,7 +9,7 @@ const AUTH_DATE = new Date('2030-03-12T11:59:00.000Z');
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 const COLOR_KEYS = ['bg', 'button', 'buttonText', 'hint', 'link', 'secondaryBg', 'text'];
 const MAIN_BUTTON_KEYS = ['disable', 'enable', 'hide', 'onClick', 'setText', 'show'];
-const BRIDGE_KEYS = ['initData', 'mainButton', 'platform', 'theme'];
+const BRIDGE_KEYS = ['initData', 'mainButton', 'platform', 'scanQr', 'theme'];
 
 const TELEGRAM_INIT_DATA = buildInitData({
   botToken: TELEGRAM_TOKEN,

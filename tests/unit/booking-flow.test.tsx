@@ -117,6 +117,7 @@ const createFakeBridge = (platform: BridgePlatform) => {
         secondaryBg: '#efeff3',
       },
     },
+    scanQr: async () => null,
     mainButton: {
       setText: (text) => {
         state.text = text;

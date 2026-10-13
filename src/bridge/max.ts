@@ -3,6 +3,23 @@ import type { Bridge, BridgeColors, MainButton, WindowWithMax } from './types';
 
 const readInitData = (): string => (window as unknown as WindowWithMax).WebApp?.initData ?? '';
 
+/** Камера MAX без выбора файла из галереи: кассир сканирует экран гостя. */
+const scanQr = async (): Promise<string | null> => {
+  const reader = (window as unknown as WindowWithMax).WebApp?.openCodeReader;
+
+  if (!reader) {
+    return null;
+  }
+
+  try {
+    const value = await reader(false);
+
+    return typeof value === 'string' && value !== '' ? value : null;
+  } catch {
+    return null;
+  }
+};
+
 const readTheme = () => (window.matchMedia(DARK_SCHEME_QUERY).matches ? DARK_THEME : LIGHT_THEME);
 
 const applyColors = (button: HTMLButtonElement, colors: BridgeColors) => {
@@ -68,6 +85,7 @@ export const createMaxBridge = (): Bridge => {
     initData: readInitData(),
     theme,
     mainButton: createMainButton(theme.colors),
+    scanQr,
   };
 };
 

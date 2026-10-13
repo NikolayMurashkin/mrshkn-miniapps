@@ -5,9 +5,15 @@ import { fileURLToPath } from 'node:url';
 import { buildConfig } from 'payload';
 import { Bookings } from './cms/collections/Bookings';
 import { Clients } from './cms/collections/Clients';
+import { Coupons } from './cms/collections/Coupons';
+import { LoyaltyEvents } from './cms/collections/LoyaltyEvents';
 import { Masters } from './cms/collections/Masters';
+import { MenuItems } from './cms/collections/MenuItems';
+import { Orders } from './cms/collections/Orders';
+import { QrTokens } from './cms/collections/QrTokens';
 import { Reminders } from './cms/collections/Reminders';
 import { Services } from './cms/collections/Services';
+import { Staff } from './cms/collections/Staff';
 import { Users } from './cms/collections/Users';
 import { Settings } from './cms/globals/Settings';
 import { tickTask } from './jobs/tick-task';
@@ -22,7 +28,20 @@ export default buildConfig({
     importMap: { baseDir: dirname },
     meta: { titleSuffix: ' · Запись' },
   },
-  collections: [Users, Services, Masters, Clients, Bookings, Reminders],
+  collections: [
+    Users,
+    Services,
+    Masters,
+    Clients,
+    Bookings,
+    Reminders,
+    MenuItems,
+    Orders,
+    Staff,
+    LoyaltyEvents,
+    Coupons,
+    QrTokens,
+  ],
   db: postgresAdapter({
     pool: { connectionString: process.env.DATABASE_URI },
     migrationDir: path.resolve(dirname, 'migrations'),

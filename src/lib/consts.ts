@@ -24,3 +24,51 @@ export const SKIP_BOOKING_HOOKS = 'skipBookingHooks';
 export const REMINDER_MAX_ATTEMPTS = 5;
 /** Mini App не для поиска: страницы, API и админка любого экземпляра закрыты от индексации. */
 export const ROBOTS_TAG = 'noindex, nofollow';
+
+export const STAMPS_PER_COUPON = 10;
+/** QR гостя одноразовый и живет 5 минут: экран сам запрашивает новый. */
+export const QR_TOKEN_TTL_SEC = 300;
+export const QR_TOKEN_BYTES = 24;
+export const REFERRAL_CODE_BYTES = 9;
+export const REFERRAL_PREFIX = 'ref_';
+export const REFERRAL_CODE_PATTERN = /^[A-Za-z0-9_-]{6,32}$/;
+export const TELEGRAM_APP_LINK_BASE = 'https://t.me';
+export const MAX_APP_LINK_BASE = 'https://max.ru';
+export const CLIENT_LOCK_NAMESPACE = 24;
+export const ORDER_LOCK_NAMESPACE = 25;
+export const SECOND_MS = 1000;
+
+export const STAMP_SOURCES = ['scan', 'referral'] as const;
+export const LOYALTY_EVENT_TYPES = ['stamp', 'referral', 'coupon-issued', 'coupon-redeemed'] as const;
+export const COUPON_STATUSES = ['active', 'redeemed'] as const;
+
+export const MENU_CATEGORIES = ['coffee', 'tea', 'bakery', 'breakfast'] as const;
+export const MENU_CATEGORY_LABELS = {
+  coffee: 'Кофе',
+  tea: 'Чай и не кофе',
+  bakery: 'Выпечка',
+  breakfast: 'Завтраки',
+} as const;
+
+export const MAX_ORDER_QTY = 20;
+export const PICKUP_OPTIONS = ['asap', 'in15', 'in30'] as const;
+export const PICKUP_LABELS = { asap: 'Как можно скорее', in15: 'Через 15 минут', in30: 'Через 30 минут' } as const;
+export const PICKUP_DELAY_MIN = { asap: null, in15: 15, in30: 30 } as const;
+
+export const ORDER_STATUSES = ['new', 'preparing', 'ready', 'done', 'cancelled'] as const;
+export const ORDER_STATUS_LABELS = {
+  new: 'Новый',
+  preparing: 'Готовится',
+  ready: 'Готов',
+  done: 'Выдан',
+  cancelled: 'Отменен',
+} as const;
+/** Куда кассир может перевести заказ из каждого статуса. */
+export const ORDER_TRANSITIONS = {
+  new: ['preparing', 'cancelled'],
+  preparing: ['ready', 'cancelled'],
+  ready: ['done'],
+  done: [],
+  cancelled: [],
+} as const;
+export const OPEN_ORDER_STATUSES = ['new', 'preparing', 'ready'] as const;

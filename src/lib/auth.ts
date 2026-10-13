@@ -27,7 +27,11 @@ export const authenticate = (req: Request, now: Date = new Date()): MiniAppAuth 
     maxAgeSec: INIT_DATA_MAX_AGE_SEC,
   });
 
-  return result.ok ? { platform, user: result.user } : null;
+  if (!result.ok) {
+    return null;
+  }
+
+  return { platform, user: result.user, ...(result.startParam ? { startParam: result.startParam } : {}) };
 };
 
 export const unauthorized = (): Response => Response.json({ error: 'unauthorized' }, { status: 401 });

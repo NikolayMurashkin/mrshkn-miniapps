@@ -1,17 +1,15 @@
 import config from '@payload-config';
-import { getPayload } from 'payload';
-import { DEMO_MASTERS, DEMO_SERVICES } from './seed-data';
+import { getPayload, type Payload } from 'payload';
+import { DEMO_MASTERS, DEMO_MENU, DEMO_SERVICES } from './seed-data';
 
-const seed = async (): Promise<void> => {
-  const payload = await getPayload({ config });
+const seedSalon = async (payload: Payload): Promise<void> => {
   const [services, masters] = await Promise.all([
     payload.count({ collection: 'services', overrideAccess: true }),
     payload.count({ collection: 'masters', overrideAccess: true }),
   ]);
 
   if (services.totalDocs > 0 || masters.totalDocs > 0) {
-    payload.logger.info('Услуги или мастера уже есть: засев пропущен.');
-    await payload.destroy();
+    payload.logger.info('Услуги или мастера уже есть: засев салона пропущен.');
 
     return;
   }
@@ -42,6 +40,30 @@ const seed = async (): Promise<void> => {
   }
 
   payload.logger.info(`Засеяно: услуг ${DEMO_SERVICES.length}, мастеров ${DEMO_MASTERS.length}.`);
+};
+
+/** Меню засевается отдельно от салона: экземпляр кофейни услуг и мастеров не держит. */
+const seedMenu = async (payload: Payload): Promise<void> => {
+  const { totalDocs } = await payload.count({ collection: 'menu-items', overrideAccess: true });
+
+  if (totalDocs > 0) {
+    payload.logger.info('Меню уже есть: засев меню пропущен.');
+
+    return;
+  }
+
+  for (const item of DEMO_MENU) {
+    await payload.create({ collection: 'menu-items', data: { ...item }, overrideAccess: true });
+  }
+
+  payload.logger.info(`Засеяно позиций меню: ${DEMO_MENU.length}.`);
+};
+
+const seed = async (): Promise<void> => {
+  const payload = await getPayload({ config });
+
+  await seedSalon(payload);
+  await seedMenu(payload);
   await payload.destroy();
 };
 

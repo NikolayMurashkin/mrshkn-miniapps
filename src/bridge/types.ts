@@ -32,10 +32,12 @@ export type Bridge = {
   initData: string;
   theme: BridgeTheme;
   mainButton: MainButton;
+  /** Сканер QR платформы; null — сканер закрыли, он недоступен или упал. */
+  scanQr(): Promise<string | null>;
 };
 
 export type TelegramThemeParams = Record<string, string | undefined>;
 export type TelegramLaunch = { initData: string; themeParams: TelegramThemeParams };
 
-export type MaxWebApp = { initData?: string };
+export type MaxWebApp = { initData?: string; openCodeReader?: (fileSelect?: boolean) => Promise<unknown> };
 export type WindowWithMax = { WebApp?: MaxWebApp };

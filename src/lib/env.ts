@@ -11,3 +11,7 @@ export const crmWebhookUrl = (): string => process.env.CRM_WEBHOOK_URL ?? '';
 export const telegramApiBase = (): string => process.env.TELEGRAM_API_BASE || DEFAULT_TELEGRAM_API_BASE;
 
 export const maxApiBase = (): string => process.env.MAX_API_BASE || DEFAULT_MAX_API_BASE;
+
+/** Имя бота для реферальной ссылки; пусто — ссылки нет. */
+export const botUsername = (platform: Platform): string =>
+  ((platform === 'telegram' ? process.env.TELEGRAM_BOT_USERNAME : process.env.MAX_BOT_USERNAME) ?? '').trim();

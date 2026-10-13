@@ -1,5 +1,5 @@
 import { formatLocalDate, formatLocalTime } from './slots';
-import type { BookingChange, BookingText } from './types';
+import type { BookingChange, BookingText, OrderText } from './types';
 
 const when = ({ startAt, timeZone }: BookingText): string =>
   `${formatLocalDate(startAt, timeZone)} в ${formatLocalTime(startAt, timeZone)}`;
@@ -29,3 +29,17 @@ export const clientChangeText = (change: BookingChange, booking: BookingText): s
 };
 
 export const reminderText = (booking: BookingText): string => `Напоминаем о записи.\n${details(booking)}`;
+
+export const couponIssuedText = (stampsPerCoupon: number): string =>
+  `Вы собрали ${stampsPerCoupon} штампов — вам купон на напиток в подарок. Покажите QR в приложении на кассе.`;
+
+export const orderReadyText = (orderId: number): string => `Заказ №${orderId} готов — заберите на кассе.`;
+
+export const ownerNewOrderText = (order: OrderText): string =>
+  [
+    `Новый предзаказ №${order.id}`,
+    ...order.lines.map(({ name, price, qty }) => `${name} × ${qty} — ${price * qty} ₽`),
+    `Итого: ${order.total} ₽, оплата на кассе`,
+    `Выдача: ${order.pickupLabel}`,
+    `Гость: ${order.clientLabel} (${order.platformLabel})`,
+  ].join('\n');

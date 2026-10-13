@@ -13,17 +13,23 @@ const sessionOf = (payload: Payload, req: PayloadRequest) => {
   return session;
 };
 
-/** Блокировка мастера до конца транзакции `req`: параллельные записи к одному мастеру идут по очереди. */
-export const lockMaster = async (payload: Payload, req: PayloadRequest, masterId: number): Promise<void> => {
-  await sessionOf(payload, req).db.execute(
-    sql`select pg_advisory_xact_lock(${ADVISORY_LOCK_NAMESPACE}::int, ${masterId}::int)`,
-  );
+/** Drizzle транзакции `req`, а без нее — общий пул адаптера. */
+export const drizzleOf = (payload: Payload, req?: PayloadRequest) =>
+  req?.transactionID ? sessionOf(payload, req).db : (payload.db as unknown as PostgresAdapter).drizzle;
+
+const lockKey = async (payload: Payload, req: PayloadRequest, namespace: number, key: number): Promise<void> => {
+  await sessionOf(payload, req).db.execute(sql`select pg_advisory_xact_lock(${namespace}::int, ${key}::int)`);
 };
 
-/** Своя транзакция Payload с блокировкой мастера: вторая запись видит уже зафиксированную первую. */
-export const withMasterLock = async <T>(
+/** Блокировка мастера до конца транзакции `req`: параллельные записи к одному мастеру идут по очереди. */
+export const lockMaster = (payload: Payload, req: PayloadRequest, masterId: number): Promise<void> =>
+  lockKey(payload, req, ADVISORY_LOCK_NAMESPACE, masterId);
+
+/** Своя транзакция Payload с блокировкой ключа: вторая операция с тем же ключом видит уже зафиксированную первую. */
+export const withLock = async <T>(
   payload: Payload,
-  masterId: number,
+  namespace: number,
+  key: number,
   work: (req: PayloadRequest) => Promise<T>,
 ): Promise<T> => {
   const req = await createLocalReq({}, payload);
@@ -31,7 +37,7 @@ export const withMasterLock = async <T>(
   await initTransaction(req);
 
   try {
-    await lockMaster(payload, req, masterId);
+    await lockKey(payload, req, namespace, key);
 
     const result = await work(req);
 
@@ -43,3 +49,9 @@ export const withMasterLock = async <T>(
     throw error;
   }
 };
+
+export const withMasterLock = <T>(
+  payload: Payload,
+  masterId: number,
+  work: (req: PayloadRequest) => Promise<T>,
+): Promise<T> => withLock(payload, ADVISORY_LOCK_NAMESPACE, masterId, work);

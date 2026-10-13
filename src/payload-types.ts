@@ -73,6 +73,12 @@ export interface Config {
     clients: Client;
     bookings: Booking;
     reminders: Reminder;
+    'menu-items': MenuItem;
+    orders: Order;
+    staff: Staff;
+    'loyalty-events': LoyaltyEvent;
+    coupons: Coupon;
+    'qr-tokens': QrToken;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -87,6 +93,12 @@ export interface Config {
     clients: ClientsSelect<false> | ClientsSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
     reminders: RemindersSelect<false> | RemindersSelect<true>;
+    'menu-items': MenuItemsSelect<false> | MenuItemsSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
+    staff: StaffSelect<false> | StaffSelect<true>;
+    'loyalty-events': LoyaltyEventsSelect<false> | LoyaltyEventsSelect<true>;
+    coupons: CouponsSelect<false> | CouponsSelect<true>;
+    'qr-tokens': QrTokensSelect<false> | QrTokensSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -215,6 +227,11 @@ export interface Client {
   name?: string | null;
   platform: 'telegram' | 'max';
   platformUserId: string;
+  /**
+   * Код в ссылке «Пригласить друга».
+   */
+  referralCode?: string | null;
+  referredBy?: (number | null) | Client;
   updatedAt: string;
   createdAt: string;
 }
@@ -254,6 +271,103 @@ export interface Reminder {
   sendAt: string;
   status: 'pending' | 'sent' | 'cancelled' | 'failed';
   attempts: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "menu-items".
+ */
+export interface MenuItem {
+  id: number;
+  name: string;
+  description?: string | null;
+  price: number;
+  category: 'coffee' | 'tea' | 'bakery' | 'breakfast';
+  /**
+   * Снятая позиция пропадает из меню Mini App.
+   */
+  available?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  client: number | Client;
+  platform: 'telegram' | 'max';
+  items: {
+    menuItem?: (number | null) | MenuItem;
+    name: string;
+    price: number;
+    qty: number;
+    id?: string | null;
+  }[];
+  total: number;
+  pickup: 'asap' | 'in15' | 'in30';
+  pickupAt?: string | null;
+  status: 'new' | 'preparing' | 'ready' | 'done' | 'cancelled';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Кто сканирует QR гостей и ведет предзаказы в Mini App.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staff".
+ */
+export interface Staff {
+  id: number;
+  name: string;
+  platform: 'telegram' | 'max';
+  /**
+   * Числовой ID пользователя Telegram или MAX.
+   */
+  platformUserId: string;
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "loyalty-events".
+ */
+export interface LoyaltyEvent {
+  id: number;
+  client: number | Client;
+  type: 'stamp' | 'referral' | 'coupon-issued' | 'coupon-redeemed';
+  at: string;
+  staff?: (number | null) | Staff;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons".
+ */
+export interface Coupon {
+  id: number;
+  client: number | Client;
+  status: 'active' | 'redeemed';
+  issuedAt: string;
+  redeemedAt?: string | null;
+  redeemedBy?: (number | null) | Staff;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "qr-tokens".
+ */
+export interface QrToken {
+  id: number;
+  token: string;
+  client: number | Client;
+  expiresAt: string;
+  usedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -405,6 +519,30 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'reminders';
         value: number | Reminder;
+      } | null)
+    | ({
+        relationTo: 'menu-items';
+        value: number | MenuItem;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'staff';
+        value: number | Staff;
+      } | null)
+    | ({
+        relationTo: 'loyalty-events';
+        value: number | LoyaltyEvent;
+      } | null)
+    | ({
+        relationTo: 'coupons';
+        value: number | Coupon;
+      } | null)
+    | ({
+        relationTo: 'qr-tokens';
+        value: number | QrToken;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -515,6 +653,8 @@ export interface ClientsSelect<T extends boolean = true> {
   name?: T;
   platform?: T;
   platformUserId?: T;
+  referralCode?: T;
+  referredBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -546,6 +686,91 @@ export interface RemindersSelect<T extends boolean = true> {
   sendAt?: T;
   status?: T;
   attempts?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "menu-items_select".
+ */
+export interface MenuItemsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  price?: T;
+  category?: T;
+  available?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  client?: T;
+  platform?: T;
+  items?:
+    | T
+    | {
+        menuItem?: T;
+        name?: T;
+        price?: T;
+        qty?: T;
+        id?: T;
+      };
+  total?: T;
+  pickup?: T;
+  pickupAt?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staff_select".
+ */
+export interface StaffSelect<T extends boolean = true> {
+  name?: T;
+  platform?: T;
+  platformUserId?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "loyalty-events_select".
+ */
+export interface LoyaltyEventsSelect<T extends boolean = true> {
+  client?: T;
+  type?: T;
+  at?: T;
+  staff?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons_select".
+ */
+export interface CouponsSelect<T extends boolean = true> {
+  client?: T;
+  status?: T;
+  issuedAt?: T;
+  redeemedAt?: T;
+  redeemedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "qr-tokens_select".
+ */
+export interface QrTokensSelect<T extends boolean = true> {
+  token?: T;
+  client?: T;
+  expiresAt?: T;
+  usedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

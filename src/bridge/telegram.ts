@@ -1,5 +1,5 @@
 import { on, postEvent, retrieveLaunchParams, retrieveRawInitData } from '@telegram-apps/sdk';
-import { EMPTY_LAUNCH, LIGHT_COLORS } from './consts';
+import { EMPTY_LAUNCH, LIGHT_COLORS, SCAN_QR_TEXT } from './consts';
 import { brightness, isHexColor } from './color';
 import type { Bridge, BridgeColors, BridgeTheme, MainButton, TelegramLaunch, TelegramThemeParams } from './types';
 
@@ -78,6 +78,30 @@ const createMainButton = (): MainButton => {
   };
 };
 
+/** Сканер QR клиента Telegram: первая прочитанная строка закрывает его, закрытие без строки — null. */
+const scanQr = (): Promise<string | null> =>
+  new Promise((resolve) => {
+    const offs: (() => void)[] = [];
+    const finish = (value: string | null) => {
+      offs.forEach((off) => off());
+      resolve(value);
+    };
+
+    offs.push(
+      on('qr_text_received', ({ data }) => {
+        postEvent('web_app_close_scan_qr_popup');
+        finish(data || null);
+      }),
+      on('scan_qr_popup_closed', () => finish(null)),
+    );
+
+    try {
+      postEvent('web_app_open_scan_qr_popup', { text: SCAN_QR_TEXT });
+    } catch {
+      finish(null);
+    }
+  });
+
 export const createTelegramBridge = (): Bridge => {
   const launch = readPageLaunch() ?? readStoredLaunch();
 
@@ -88,5 +112,6 @@ export const createTelegramBridge = (): Bridge => {
     initData: launch.initData,
     theme: readTheme(launch.themeParams),
     mainButton: createMainButton(),
+    scanQr,
   };
 };
