@@ -2,8 +2,11 @@ import type { BridgeColors, BridgeTheme, TelegramLaunch } from './types';
 
 export const MAX_BRIDGE_SCRIPT_URL = 'https://st.max.ru/js/max-web-app.js';
 export const MAIN_BUTTON_ATTRIBUTE = 'data-bridge-main-button';
+export const LIGHT_SCHEME_QUERY = '(prefers-color-scheme: light)';
 export const DARK_SCHEME_QUERY = '(prefers-color-scheme: dark)';
 export const SCAN_QR_TEXT = 'Наведите камеру на QR гостя';
+/** Сканер, от которого клиент Telegram не дождался ответа, закрывается сам: кнопка кассира не зависает. */
+export const SCAN_QR_TIMEOUT_MS = 60_000;
 
 export const EMPTY_LAUNCH: TelegramLaunch = { initData: '', themeParams: {} };
 

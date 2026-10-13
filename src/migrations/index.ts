@@ -1,5 +1,6 @@
 import * as migration_20261005_113624_initial from './20261005_113624_initial';
 import * as migration_20261012_081435_loyalty_menu from './20261012_081435_loyalty_menu';
+import * as migration_20261013_071859_qr_tokens_cleanup from './20261013_071859_qr_tokens_cleanup';
 
 export const migrations = [
   {
@@ -10,6 +11,11 @@ export const migrations = [
   {
     up: migration_20261012_081435_loyalty_menu.up,
     down: migration_20261012_081435_loyalty_menu.down,
-    name: '20261012_081435_loyalty_menu'
+    name: '20261012_081435_loyalty_menu',
+  },
+  {
+    up: migration_20261013_071859_qr_tokens_cleanup.up,
+    down: migration_20261013_071859_qr_tokens_cleanup.down,
+    name: '20261013_071859_qr_tokens_cleanup'
   },
 ];

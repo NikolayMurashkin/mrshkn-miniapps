@@ -1,7 +1,7 @@
 import type { Payload } from 'payload';
 import type { Client } from '../payload-types';
 import { CLIENT_LOCK_NAMESPACE, QR_TOKEN_TTL_SEC, SECOND_MS, STAMPS_PER_COUPON } from './consts';
-import { botUsername } from './env';
+import { botUsername, isDemoInstance } from './env';
 import { ensureGuest, findActiveStaff, findGuest, guestLabel, notifyGuest } from './guests';
 import { accrueStamp, buildReferralLink, createQrToken, createReferralCode, stampsOnCard } from './loyalty';
 import { createLoyaltyStore } from './loyalty-store';
@@ -48,7 +48,7 @@ export const loyaltyMe = async (payload: Payload, auth: MiniAppAuth, now: Date) 
   const staff = await findActiveStaff(payload, auth);
 
   if (staff) {
-    return { role: 'staff' as const, name: staff.name };
+    return { role: 'staff' as const, name: staff.name, demo: isDemoInstance() };
   }
 
   const client = await ensureGuest(payload, auth, now);
@@ -64,6 +64,7 @@ export const loyaltyMe = async (payload: Payload, auth: MiniAppAuth, now: Date) 
     stampsPerCoupon: STAMPS_PER_COUPON,
     coupons,
     referralLink: buildReferralLink(auth.platform, botUsername(auth.platform), code),
+    demo: isDemoInstance(),
   };
 };
 

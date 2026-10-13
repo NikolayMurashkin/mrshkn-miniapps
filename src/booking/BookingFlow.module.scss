@@ -11,8 +11,13 @@
     'Segoe UI',
     sans-serif;
   hyphens: none;
-  overflow-wrap: anywhere;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
+  color-scheme: light;
+
+  &[data-scheme='dark'] {
+    color-scheme: dark;
+  }
 }
 
 .title {

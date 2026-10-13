@@ -37,6 +37,9 @@ export const MAX_APP_LINK_BASE = 'https://max.ru';
 export const CLIENT_LOCK_NAMESPACE = 24;
 export const ORDER_LOCK_NAMESPACE = 25;
 export const SECOND_MS = 1000;
+/** Просроченные QR гостей стираются раз в сутки: таблица не растет, а проход задачи раз в минуту остается легким. */
+export const QR_CLEANUP_INTERVAL_MS = 24 * HOUR_MS;
+export const DEFAULT_ADMIN_TITLE = 'Mini App';
 
 export const STAMP_SOURCES = ['scan', 'referral'] as const;
 export const LOYALTY_EVENT_TYPES = ['stamp', 'referral', 'coupon-issued', 'coupon-redeemed'] as const;

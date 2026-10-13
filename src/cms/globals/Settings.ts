@@ -41,5 +41,11 @@ export const Settings: GlobalConfig = {
       admin: { description: 'Допустимо 15, 30 или 60.' },
       validate: validateSlotStep,
     },
+    {
+      name: 'qrTokensCleanedAt',
+      type: 'date',
+      label: 'Последняя очистка просроченных QR',
+      admin: { hidden: true },
+    },
   ],
 };

@@ -46,14 +46,19 @@ export const LoyaltyApp = ({ bridge }: LoyaltyAppProps) => {
       );
     }
 
-    return me.role === 'staff' ? (
-      <StaffApp bridge={bridge} />
-    ) : (
-      <GuestApp
-        bridge={bridge}
-        me={me}
-        onMe={setMe}
-      />
+    return (
+      <>
+        {me.role === 'staff' ? (
+          <StaffApp bridge={bridge} />
+        ) : (
+          <GuestApp
+            bridge={bridge}
+            me={me}
+            onMe={setMe}
+          />
+        )}
+        {me.demo === true && <p className={styles.demoNote}>{TEXTS.demoNote}</p>}
+      </>
     );
   };
 

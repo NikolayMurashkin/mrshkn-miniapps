@@ -267,8 +267,8 @@ describe('штампы по QR: купон за 10-й, уведомление, �
     expect(eventsOf(await history(ANNA), 'coupon-redeemed')).toHaveLength(1);
   });
 
-  it('L6 GET /loyalty/me от кассира: { role: staff, name }, клиента с его ID не создано', async () => {
-    expect(await readJson(await me(STAFF), 200)).toEqual({ role: 'staff', name: STAFF_NAME });
+  it('L6 GET /loyalty/me от кассира: { role: staff, name, demo: false }, клиента с его ID не создано', async () => {
+    expect(await readJson(await me(STAFF), 200)).toEqual({ role: 'staff', name: STAFF_NAME, demo: false });
 
     const { totalDocs } = await ctx.local.find({
       collection: 'clients',

@@ -1,7 +1,7 @@
 import type { Payload } from 'payload';
 import type { Booking, Reminder } from '../payload-types';
 import { loadSettings } from '../lib/booking';
-import { CRM_MAX_ATTEMPTS, REMINDER_MAX_ATTEMPTS } from '../lib/consts';
+import { CRM_MAX_ATTEMPTS, QR_CLEANUP_INTERVAL_MS, REMINDER_MAX_ATTEMPTS } from '../lib/consts';
 import { syncCrm } from '../lib/crm';
 import { reminderText } from '../lib/messages';
 import { sendToClient } from '../lib/messenger';
@@ -95,9 +95,41 @@ const retryFailedCrm = async (payload: Payload): Promise<void> => {
   }
 };
 
-/** Один проход задачи раз в минуту: созревшие напоминания и повтор упавших вебхуков CRM. Сбой одной части не блокирует другую. */
+/** Раз в сутки стирает QR гостей с истекшим сроком, использованные и нет; отметка прохода — в глобале `settings`. */
+const cleanExpiredQrTokens = async (payload: Payload, now: Date): Promise<void> => {
+  const { qrTokensCleanedAt } = await payload.findGlobal({ slug: 'settings', depth: 0, overrideAccess: true });
+
+  if (qrTokensCleanedAt && now.getTime() - new Date(qrTokensCleanedAt).getTime() < QR_CLEANUP_INTERVAL_MS) {
+    return;
+  }
+
+  const { errors } = await payload.delete({
+    collection: 'qr-tokens',
+    where: { expiresAt: { less_than: now.toISOString() } },
+    overrideAccess: true,
+  });
+
+  if (errors.length > 0) {
+    payload.logger.warn({ msg: `просроченные QR: не удалено ${errors.length}, повтор через сутки` });
+  }
+
+  await payload.updateGlobal({
+    slug: 'settings',
+    data: { qrTokensCleanedAt: now.toISOString() },
+    overrideAccess: true,
+  });
+};
+
+/**
+ * Один проход задачи раз в минуту: созревшие напоминания, повтор упавших вебхуков CRM и суточная очистка
+ * просроченных QR. Сбой одной части не блокирует другие.
+ */
 export const runTick = async (payload: Payload, now: Date): Promise<void> => {
-  const results = await Promise.allSettled([sendDueReminders(payload, now), retryFailedCrm(payload)]);
+  const results = await Promise.allSettled([
+    sendDueReminders(payload, now),
+    retryFailedCrm(payload),
+    cleanExpiredQrTokens(payload, now),
+  ]);
 
   for (const result of results) {
     if (result.status === 'rejected') {

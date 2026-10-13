@@ -1,5 +1,5 @@
 import { on, postEvent, retrieveLaunchParams, retrieveRawInitData } from '@telegram-apps/sdk';
-import { EMPTY_LAUNCH, LIGHT_COLORS, SCAN_QR_TEXT } from './consts';
+import { EMPTY_LAUNCH, LIGHT_COLORS, SCAN_QR_TEXT, SCAN_QR_TIMEOUT_MS } from './consts';
 import { brightness, isHexColor } from './color';
 import type { Bridge, BridgeColors, BridgeTheme, MainButton, TelegramLaunch, TelegramThemeParams } from './types';
 
@@ -78,14 +78,28 @@ const createMainButton = (): MainButton => {
   };
 };
 
-/** Сканер QR клиента Telegram: первая прочитанная строка закрывает его, закрытие без строки — null. */
+/**
+ * Сканер QR клиента Telegram: первая прочитанная строка закрывает его, закрытие без строки — null.
+ * Клиент может не ответить вовсе — тогда сканер закрывается по таймауту, результат тоже null.
+ */
 const scanQr = (): Promise<string | null> =>
   new Promise((resolve) => {
     const offs: (() => void)[] = [];
+    let done = false;
     const finish = (value: string | null) => {
+      if (done) {
+        return;
+      }
+
+      done = true;
+      clearTimeout(timer);
       offs.forEach((off) => off());
       resolve(value);
     };
+    const timer = setTimeout(() => {
+      postEvent('web_app_close_scan_qr_popup');
+      finish(null);
+    }, SCAN_QR_TIMEOUT_MS);
 
     offs.push(
       on('qr_text_received', ({ data }) => {

@@ -860,6 +860,7 @@ export interface Setting {
    * Допустимо 15, 30 или 60.
    */
   slotStepMin: number;
+  qrTokensCleanedAt?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -888,6 +889,7 @@ export interface PayloadJobsStat {
 export interface SettingsSelect<T extends boolean = true> {
   timeZone?: T;
   slotStepMin?: T;
+  qrTokensCleanedAt?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

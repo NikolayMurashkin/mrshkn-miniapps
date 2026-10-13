@@ -18,6 +18,7 @@ import { Users } from './cms/collections/Users';
 import { Settings } from './cms/globals/Settings';
 import { tickTask } from './jobs/tick-task';
 import { TICK_CRON, TICK_QUEUE } from './lib/consts';
+import { adminTitleSuffix } from './lib/env';
 import { migrations } from './migrations';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -26,7 +27,7 @@ export default buildConfig({
   admin: {
     user: Users.slug,
     importMap: { baseDir: dirname },
-    meta: { titleSuffix: ' · Запись' },
+    meta: { titleSuffix: adminTitleSuffix() },
   },
   collections: [
     Users,

@@ -9,8 +9,9 @@ export type GuestMe = {
   stampsPerCoupon: number;
   coupons: Coupon[];
   referralLink: string | null;
+  demo: boolean;
 };
-export type StaffMe = { role: 'staff'; name: string };
+export type StaffMe = { role: 'staff'; name: string; demo: boolean };
 export type Me = GuestMe | StaffMe;
 
 export type QrTicket = { qrToken: string; expiresAt: string };

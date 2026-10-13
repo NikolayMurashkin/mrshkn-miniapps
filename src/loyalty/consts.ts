@@ -116,6 +116,7 @@ export const TEXTS = {
   pickupBy: 'к',
   statusConflict: 'Заказ уже изменили — список обновлен',
   statusFailed: 'Не получилось сменить статус. Попробуйте еще раз',
+  demoNote: 'Демо-проект студии\u00a0MRSHKN',
 } as const;
 
 export const KEY_STEPS: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };
