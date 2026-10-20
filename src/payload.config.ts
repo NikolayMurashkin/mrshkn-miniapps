@@ -51,7 +51,7 @@ export default buildConfig({
   globals: [Settings],
   graphQL: { disable: true },
   i18n: { fallbackLanguage: 'ru', supportedLanguages: { ru } },
-  jobs: { tasks: [tickTask], autoRun: [{ cron: TICK_CRON, queue: TICK_QUEUE }] },
+  jobs: { tasks: [tickTask], autoRun: [{ cron: TICK_CRON, queue: TICK_QUEUE, silent: { info: true } }] },
   secret: process.env.PAYLOAD_SECRET ?? '',
   telemetry: false,
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },

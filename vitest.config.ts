@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 export default defineConfig({
   resolve: {
     alias: {
+      // Как в интеграционном: мок `@/payload.config` покрывает и импорт через `@payload-config` — это один файл.
+      '@payload-config': fileURLToPath(new URL('./src/payload.config.ts', import.meta.url)),
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
