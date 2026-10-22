@@ -24,6 +24,8 @@ export const SKIP_BOOKING_HOOKS = 'skipBookingHooks';
 export const REMINDER_MAX_ATTEMPTS = 5;
 /** Mini App не для поиска: страницы, API и админка любого экземпляра закрыты от индексации. */
 export const ROBOTS_TAG = 'noindex, nofollow';
+/** Подпись публичного демо-экземпляра студии — одна на «Запись» и «Лояльность». */
+export const DEMO_NOTE = 'Демо-проект студии\u00a0MRSHKN';
 
 export const STAMPS_PER_COUPON = 10;
 /** QR гостя одноразовый и живет 5 минут: экран сам запрашивает новый. */

@@ -1,4 +1,4 @@
-import { MAX_ORDER_QTY, ORDER_STATUS_LABELS, PICKUP_LABELS, STAMPS_PER_COUPON } from '@/lib/consts';
+import { DEMO_NOTE, MAX_ORDER_QTY, ORDER_STATUS_LABELS, PICKUP_LABELS, STAMPS_PER_COUPON } from '@/lib/consts';
 import type { ApiFailureKind, CardNotice, GuestTab, LoyaltyEventType, OrderStatus, StaffTab, TabItem } from './types';
 
 export {
@@ -116,7 +116,7 @@ export const TEXTS = {
   pickupBy: 'к',
   statusConflict: 'Заказ уже изменили — список обновлен',
   statusFailed: 'Не получилось сменить статус. Попробуйте еще раз',
-  demoNote: 'Демо-проект студии\u00a0MRSHKN',
+  demoNote: DEMO_NOTE,
 } as const;
 
 export const KEY_STEPS: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };

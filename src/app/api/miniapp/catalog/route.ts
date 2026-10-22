@@ -2,6 +2,7 @@ import { getPayload } from 'payload';
 import config from '@payload-config';
 import { authenticate, unauthorized } from '@/lib/auth';
 import { loadSettings } from '@/lib/booking';
+import { isDemoInstance } from '@/lib/env';
 
 export const GET = async (req: Request): Promise<Response> => {
   if (!authenticate(req)) {
@@ -23,5 +24,6 @@ export const GET = async (req: Request): Promise<Response> => {
       name,
       services: serviceIds.map((service) => (typeof service === 'object' ? service.id : service)),
     })),
+    demo: isDemoInstance(),
   });
 };

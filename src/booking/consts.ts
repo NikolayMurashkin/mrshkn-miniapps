@@ -1,4 +1,4 @@
-import { DEFAULT_TIME_ZONE } from '@/lib/consts';
+import { DEFAULT_TIME_ZONE, DEMO_NOTE } from '@/lib/consts';
 import type { Step } from './types';
 
 export { DEFAULT_TIME_ZONE };
@@ -37,4 +37,5 @@ export const TEXTS = {
   service: 'Услуга',
   master: 'Мастер',
   when: 'Время',
+  demoNote: DEMO_NOTE,
 } as const;

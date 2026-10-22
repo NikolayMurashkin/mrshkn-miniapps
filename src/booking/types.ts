@@ -1,6 +1,6 @@
 export type CatalogService = { id: number; name: string; durationMin: number };
 export type CatalogMaster = { id: number; name: string; services: number[] };
-export type Catalog = { services: CatalogService[]; masters: CatalogMaster[]; timeZone?: string };
+export type Catalog = { services: CatalogService[]; masters: CatalogMaster[]; timeZone?: string; demo?: boolean };
 
 export type Step = 'service' | 'master' | 'time' | 'review';
 

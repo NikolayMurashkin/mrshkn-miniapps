@@ -188,6 +188,13 @@
   cursor: pointer;
 }
 
+.demoNote {
+  margin: 32px 0 0;
+  color: var(--hint);
+  font-size: 13px;
+  text-align: center;
+}
+
 @media (max-width: 360px) {
   .root {
     padding-right: 12px;

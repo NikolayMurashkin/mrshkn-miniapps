@@ -28,6 +28,7 @@ export const BookingFlow = ({ bridge }: BookingFlowProps) => {
   const service = catalog?.services.find(({ id }) => id === selection.serviceId);
   const master = catalog?.masters.find(({ id }) => id === selection.masterId);
   const masters = catalog?.masters.filter(({ services }) => service && services.includes(service.id)) ?? [];
+  const showDemoNote = loadStatus === 'ready' && catalog?.demo === true;
 
   const renderMessage = (text: string, onRetry?: () => void) => (
     <div
@@ -195,6 +196,7 @@ export const BookingFlow = ({ bridge }: BookingFlowProps) => {
       style={themeVariables(bridge.theme)}
     >
       {renderBody()}
+      {showDemoNote && <p className={styles.demoNote}>{TEXTS.demoNote}</p>}
     </main>
   );
 };
