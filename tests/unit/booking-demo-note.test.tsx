@@ -96,6 +96,8 @@ const createFakeBridge = () => {
       disable: () => {
         state.enabled = false;
       },
+      showProgress: () => {},
+      hideProgress: () => {},
       onClick: (handler) => {
         handlers.add(handler);
 

@@ -76,10 +76,13 @@ export const useOrderFlow = (bridge: Bridge, active: boolean) => {
     }
 
     inFlightRef.current = true;
+    bridge.mainButton.showProgress();
     setSubmitStatus('sending');
 
     const result = await createOrder(bridge, { items: lines, pickup: stateRef.current.pickup });
 
+    // снимаем на любой ответ: в Telegram индикатор живет в клиенте и вернулся бы со следующим show()
+    bridge.mainButton.hideProgress();
     inFlightRef.current = false;
 
     if (result.kind === 'ok') {

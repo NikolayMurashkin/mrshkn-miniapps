@@ -71,6 +71,8 @@ const fakeBridge = (): Bridge => ({
     hide: () => {},
     enable: () => {},
     disable: () => {},
+    showProgress: () => {},
+    hideProgress: () => {},
     onClick: () => () => {},
   },
   scanQr: async () => null,

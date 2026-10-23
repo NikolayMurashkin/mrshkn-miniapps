@@ -98,10 +98,13 @@ const createApi = (options: ApiOptions = {}) => {
   };
 };
 
-/** Подставной bridge: журнал вызовов главной кнопки; нажать можно только на видимую и активную, как на платформе. */
+/**
+ * Подставной bridge: журнал вызовов главной кнопки; нажать можно только на видимую и активную, как на платформе.
+ * forcePress — нажатие, которое платформа доставила, хотя кнопка выключена: проверяет защиту самого потока.
+ */
 const createFakeBridge = (platform: BridgePlatform) => {
   const handlers = new Set<() => void>();
-  const state = { visible: false, enabled: true, text: '', log: [] as string[] };
+  const state = { visible: false, enabled: true, progress: false, text: '', log: [] as string[] };
   const bridge: Bridge = {
     platform,
     initData: `query_id=${platform}-query&user=%7B%22id%22%3A4242%7D&auth_date=1900000000&hash=${platform}hash`,
@@ -139,6 +142,14 @@ const createFakeBridge = (platform: BridgePlatform) => {
         state.enabled = false;
         state.log.push('disable');
       },
+      showProgress: () => {
+        state.progress = true;
+        state.log.push('showProgress');
+      },
+      hideProgress: () => {
+        state.progress = false;
+        state.log.push('hideProgress');
+      },
       onClick: (handler) => {
         handlers.add(handler);
 
@@ -153,8 +164,9 @@ const createFakeBridge = (platform: BridgePlatform) => {
       [...handlers].forEach((handler) => handler());
     }
   };
+  const forcePress = () => [...handlers].forEach((handler) => handler());
 
-  return { bridge, state, press };
+  return { bridge, state, press, forcePress };
 };
 
 type FakeBridge = ReturnType<typeof createFakeBridge>;
@@ -189,6 +201,14 @@ const pressMainButton = (fake: FakeBridge, times = 1) =>
   });
 
 const renderFlow = (fake: FakeBridge) => render(<BookingFlow bridge={fake.bridge} />);
+
+/** Запись later в журнале кнопки стоит после последней earlier; earlier в журнале есть. */
+const expectLoggedAfter = (log: string[], earlier: string, later: string) => {
+  expect(log).toContain(earlier);
+  expect(log.lastIndexOf(later), `«${later}» после «${earlier}»: ${log.join(', ')}`).toBeGreaterThan(
+    log.lastIndexOf(earlier),
+  );
+};
 
 afterEach(() => {
   cleanup();
@@ -501,5 +521,74 @@ describe('Крайние случаи', () => {
     expect(api.byPath('/api/miniapp/bookings')).toHaveLength(1);
     expect(fake.state.visible).toBe(false);
     expect(screen.queryByText(BOOKING_FAILED_TEXT)).toBeNull();
+  });
+});
+
+describe('G: индикатор отправки на главной кнопке', () => {
+  it('G1: индикатор до ответа, один POST, снят на успехе', async () => {
+    let release: (response: Response) => void = () => {};
+    const api = createApi({ booking: () => new Promise<Response>((resolve) => (release = resolve)) });
+    const fake = createFakeBridge('telegram');
+
+    renderFlow(fake);
+    await reachReview(api);
+
+    await pressMainButton(fake);
+
+    expect(fake.state.progress).toBe(true);
+    expectLoggedAfter(fake.state.log, 'show', 'showProgress');
+    expect(api.byPath('/api/miniapp/bookings')).toHaveLength(1);
+
+    act(() => fake.forcePress());
+    expect(api.byPath('/api/miniapp/bookings')).toHaveLength(1);
+
+    await act(async () => release(json({ id: 501 }, 201)));
+    await screen.findByText(/Вы записаны/);
+
+    expect(fake.state.progress).toBe(false);
+    expectLoggedAfter(fake.state.log, 'showProgress', 'hideProgress');
+  });
+
+  it.each<[string, () => Response | Promise<Response>, string]>([
+    ['500', () => json({ error: 'boom' }, 500), BOOKING_FAILED_TEXT],
+    ['сеть', () => Promise.reject(new TypeError('Failed to fetch')), NETWORK_TEXT],
+  ])('G2 %s: ошибка снимает индикатор, кнопка снова нажимается', async (_label, booking, text) => {
+    const api = createApi({ booking });
+    const fake = createFakeBridge('telegram');
+
+    renderFlow(fake);
+    await reachReview(api);
+
+    await pressMainButton(fake);
+    await screen.findByText(text);
+
+    expect(fake.state.progress).toBe(false);
+    expect(fake.state.enabled).toBe(true);
+    expectLoggedAfter(fake.state.log, 'showProgress', 'hideProgress');
+    expectLoggedAfter(fake.state.log, 'showProgress', 'enable');
+
+    await pressMainButton(fake);
+
+    expect(api.byPath('/api/miniapp/bookings')).toHaveLength(2);
+    expect(fake.state.log.filter((entry) => entry === 'showProgress')).toHaveLength(2);
+    await screen.findByText(text);
+  });
+
+  // в Telegram индикатор — состояние кнопки в клиенте: не снятый вернется при следующем show()
+  it.each<[number, string]>([
+    [409, CONFLICT_TEXT],
+    [401, UNAUTHORIZED_TEXT],
+  ])('G3 %i: 409 и 401 тоже снимают индикатор', async (status, text) => {
+    const api = createApi({ booking: () => json({ error: 'rejected' }, status) });
+    const fake = createFakeBridge('telegram');
+
+    renderFlow(fake);
+    await reachReview(api);
+
+    await pressMainButton(fake);
+    await screen.findByText(text);
+
+    expect(fake.state.progress).toBe(false);
+    expectLoggedAfter(fake.state.log, 'showProgress', 'hideProgress');
   });
 });

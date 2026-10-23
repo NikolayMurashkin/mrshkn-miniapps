@@ -141,9 +141,13 @@ export const useBookingFlow = (bridge: Bridge) => {
 
     inFlightRef.current = true;
     bridge.mainButton.disable();
+    bridge.mainButton.showProgress();
     setSubmitStatus('sending');
 
     const result = await createBooking(bridge, { serviceId, masterId, startAt });
+
+    // снимаем на любой ответ: в Telegram индикатор живет в клиенте и вернулся бы со следующим show()
+    bridge.mainButton.hideProgress();
 
     if (result.kind === 'ok') {
       setSubmitStatus('done');

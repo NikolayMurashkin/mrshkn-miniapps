@@ -8,7 +8,7 @@ const MAX_TOKEN = 'max-bridge-token';
 const AUTH_DATE = new Date('2030-03-12T11:59:00.000Z');
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 const COLOR_KEYS = ['bg', 'button', 'buttonText', 'hint', 'link', 'secondaryBg', 'text'];
-const MAIN_BUTTON_KEYS = ['disable', 'enable', 'hide', 'onClick', 'setText', 'show'];
+const MAIN_BUTTON_KEYS = ['disable', 'enable', 'hide', 'hideProgress', 'onClick', 'setText', 'show', 'showProgress'];
 const BRIDGE_KEYS = ['initData', 'mainButton', 'platform', 'scanQr', 'theme'];
 
 const TELEGRAM_INIT_DATA = buildInitData({
@@ -284,5 +284,178 @@ describe('A4: один формат', () => {
     expect(Object.keys(telegram).sort()).toEqual(Object.keys(max).sort());
     expect(Object.keys(telegram.theme.colors).sort()).toEqual(Object.keys(max.theme.colors).sort());
     expect(Object.keys(telegram.mainButton).sort()).toEqual(Object.keys(max.mainButton).sort());
+  });
+});
+
+const PROGRESS = '[data-bridge-main-button-progress]';
+const progressIn = (button: HTMLButtonElement | null) => button?.querySelectorAll(PROGRESS).length ?? 0;
+
+describe('P: индикатор отправки на главной кнопке', () => {
+  it('P1 telegram: showProgress/hideProgress с прежним состоянием', async () => {
+    const { bridge, sent } = await openTelegram();
+
+    bridge.mainButton.setText('Оформить заказ');
+    bridge.mainButton.show();
+    bridge.mainButton.disable();
+    bridge.mainButton.showProgress();
+    await tick();
+
+    expect(lastSetup(sent)?.params).toMatchObject({
+      text: 'Оформить заказ',
+      is_visible: true,
+      is_active: false,
+      is_progress_visible: true,
+    });
+
+    bridge.mainButton.hideProgress();
+    await tick();
+
+    expect(lastSetup(sent)?.params).toMatchObject({
+      text: 'Оформить заказ',
+      is_visible: true,
+      is_active: false,
+      is_progress_visible: false,
+    });
+
+    // другая пара значений: индикатор не показывает скрытую кнопку и не гасит активную
+    bridge.mainButton.enable();
+    bridge.mainButton.hide();
+    bridge.mainButton.showProgress();
+    await tick();
+
+    expect(lastSetup(sent)?.params).toMatchObject({
+      text: 'Оформить заказ',
+      is_visible: false,
+      is_active: true,
+      is_progress_visible: true,
+    });
+
+    bridge.mainButton.hideProgress();
+    await tick();
+
+    expect(lastSetup(sent)?.params).toMatchObject({
+      text: 'Оформить заказ',
+      is_visible: false,
+      is_active: true,
+      is_progress_visible: false,
+    });
+  });
+
+  // поток во время отправки зовет setText/show/disable: событие без индикатора погасило бы его
+  it('P1b telegram: прогресс переживает другие изменения кнопки', async () => {
+    const { bridge, sent } = await openTelegram();
+
+    bridge.mainButton.setText('Записаться');
+    bridge.mainButton.show();
+    bridge.mainButton.showProgress();
+    bridge.mainButton.enable();
+    await tick();
+
+    expect(lastSetup(sent)?.params).toMatchObject({ is_active: true, is_progress_visible: true });
+
+    bridge.mainButton.setText('Оформить заказ');
+    await tick();
+
+    expect(lastSetup(sent)?.params).toMatchObject({ text: 'Оформить заказ', is_progress_visible: true });
+
+    bridge.mainButton.hideProgress();
+    await tick();
+
+    expect(lastSetup(sent)?.params).toMatchObject({ is_active: true, is_progress_visible: false });
+  });
+
+  it.each<['enable' | 'disable', boolean]>([
+    ['enable', false],
+    ['disable', true],
+  ])('P2 max: индикатор и aria-busy, до индикатора %s', async (before, disabledAfter) => {
+    const bridge = await openMax();
+
+    bridge.mainButton.setText('Записаться');
+    bridge.mainButton.show();
+    bridge.mainButton[before]();
+    bridge.mainButton.showProgress();
+
+    const button = maxButton();
+
+    expect(button?.getAttribute('aria-busy')).toBe('true');
+    expect(button?.disabled).toBe(true);
+    expect(progressIn(button)).toBe(1);
+    expect(button?.textContent).toContain('Записаться');
+
+    bridge.mainButton.hideProgress();
+
+    expect(progressIn(maxButton())).toBe(0);
+    expect(maxButton()?.hasAttribute('aria-busy')).toBe(false);
+    expect(maxButton()?.disabled).toBe(disabledAfter);
+  });
+
+  // текст пишется в кнопку, а индикатор — ее дочерний элемент: замена текста не должна его снести
+  it('P2b max: setText во время индикатора его не стирает', async () => {
+    const bridge = await openMax();
+
+    bridge.mainButton.setText('Записаться');
+    bridge.mainButton.show();
+    bridge.mainButton.showProgress();
+    bridge.mainButton.setText('Оформить заказ');
+
+    const button = maxButton();
+
+    expect(progressIn(button)).toBe(1);
+    expect(button?.textContent).toContain('Оформить заказ');
+    expect(button?.textContent).not.toContain('Записаться');
+    expect(button?.getAttribute('aria-busy')).toBe('true');
+  });
+
+  // поток при ошибке может позвать enable() до hideProgress(): после снятия кнопка снова нажимается
+  it('P2c max: enable/disable во время индикатора', async () => {
+    const bridge = await openMax();
+
+    bridge.mainButton.setText('Записаться');
+    bridge.mainButton.show();
+
+    bridge.mainButton.disable();
+    bridge.mainButton.showProgress();
+    bridge.mainButton.enable();
+
+    expect(maxButton()?.disabled).toBe(true);
+    expect(maxButton()?.getAttribute('aria-busy')).toBe('true');
+
+    bridge.mainButton.hideProgress();
+
+    expect(maxButton()?.disabled).toBe(false);
+
+    bridge.mainButton.enable();
+    bridge.mainButton.showProgress();
+    bridge.mainButton.disable();
+    bridge.mainButton.hideProgress();
+
+    expect(maxButton()?.disabled).toBe(true);
+  });
+
+  it('P2d max: повторные showProgress и hideProgress', async () => {
+    const bridge = await openMax();
+
+    bridge.mainButton.setText('Записаться');
+    bridge.mainButton.show();
+    bridge.mainButton.enable();
+    bridge.mainButton.showProgress();
+    bridge.mainButton.showProgress();
+
+    expect(progressIn(maxButton())).toBe(1);
+
+    expect(() => {
+      bridge.mainButton.hideProgress();
+      bridge.mainButton.hideProgress();
+    }).not.toThrow();
+    expect(progressIn(maxButton())).toBe(0);
+    expect(maxButton()?.disabled).toBe(false);
+
+    const fresh = await openMax();
+
+    fresh.mainButton.disable();
+
+    expect(() => fresh.mainButton.hideProgress()).not.toThrow();
+    expect(maxButton()?.disabled).toBe(true);
+    expect(maxButton()?.hasAttribute('aria-busy')).toBe(false);
   });
 });

@@ -58,13 +58,14 @@ const readTheme = (params: TelegramThemeParams): BridgeTheme => {
 
 /** Главная кнопка Telegram хранит состояние на стороне клиента: каждое изменение шлем целиком одним событием. */
 const createMainButton = (): MainButton => {
-  const state = { text: '', isVisible: false, isEnabled: true };
+  const state = { text: '', isVisible: false, isEnabled: true, isProgressVisible: false };
   const update = (changes: Partial<typeof state>) => {
     Object.assign(state, changes);
     postEvent('web_app_setup_main_button', {
       text: state.text,
       is_visible: state.isVisible,
       is_active: state.isEnabled,
+      is_progress_visible: state.isProgressVisible,
     });
   };
 
@@ -74,6 +75,8 @@ const createMainButton = (): MainButton => {
     hide: () => update({ isVisible: false }),
     enable: () => update({ isEnabled: true }),
     disable: () => update({ isEnabled: false }),
+    showProgress: () => update({ isProgressVisible: true }),
+    hideProgress: () => update({ isProgressVisible: false }),
     onClick: (handler) => on('main_button_pressed', handler),
   };
 };

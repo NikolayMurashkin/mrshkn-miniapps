@@ -23,9 +23,15 @@ export type MainButton = {
   hide(): void;
   enable(): void;
   disable(): void;
+  /** Индикатор отправки на кнопке. */
+  showProgress(): void;
+  hideProgress(): void;
   /** Возвращает отписку. */
   onClick(handler: () => void): () => void;
 };
+
+/** Индикатор на своей кнопке MAX и его анимация (без Web Animations API ее нет). */
+export type MaxProgress = { indicator: HTMLSpanElement; animation: Animation | undefined };
 
 export type Bridge = {
   platform: BridgePlatform;

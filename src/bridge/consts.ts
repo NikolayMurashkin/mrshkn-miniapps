@@ -2,8 +2,20 @@ import type { BridgeColors, BridgeTheme, TelegramLaunch } from './types';
 
 export const MAX_BRIDGE_SCRIPT_URL = 'https://st.max.ru/js/max-web-app.js';
 export const MAIN_BUTTON_ATTRIBUTE = 'data-bridge-main-button';
+export const MAIN_BUTTON_PROGRESS_ATTRIBUTE = 'data-bridge-main-button-progress';
 export const LIGHT_SCHEME_QUERY = '(prefers-color-scheme: light)';
 export const DARK_SCHEME_QUERY = '(prefers-color-scheme: dark)';
+export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+export const PROGRESS_SPIN_KEYFRAMES: Keyframe[] = [{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }];
+export const PROGRESS_SPIN_TIMING: KeyframeAnimationOptions = { duration: 800, iterations: Infinity, easing: 'linear' };
+/** Без вращения: кольцо медленно пульсирует, движение на экране минимально. */
+export const PROGRESS_PULSE_KEYFRAMES: Keyframe[] = [{ opacity: 1 }, { opacity: 0.35 }, { opacity: 1 }];
+export const PROGRESS_PULSE_TIMING: KeyframeAnimationOptions = {
+  duration: 1500,
+  iterations: Infinity,
+  easing: 'ease-in-out',
+};
 export const SCAN_QR_TEXT = 'Наведите камеру на QR гостя';
 /** Сканер, от которого клиент Telegram не дождался ответа, закрывается сам: кнопка кассира не зависает. */
 export const SCAN_QR_TIMEOUT_MS = 60_000;
